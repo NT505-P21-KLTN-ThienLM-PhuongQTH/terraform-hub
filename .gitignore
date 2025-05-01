@@ -1,0 +1,35 @@
+# Terraform ignore
+**/.terraform/*
+# Terraform state
+*.tfstate
+*.tfstate.backup
+
+# Crash logs
+crash.log
+
+# Terraform plan files
+*.tfplan
+
+# Sensitive files
+*.pem
+*.key
+
+# Local override files (for vars)
+terraform.tfvars
+terraform.tfvars.json
+
+# .terraform/ dir holds provider plugins, modules, etc.
+.terraform/
+
+# Terraform lock file (optional: commit only for consistency)
+.terraform.lock.hcl
+
+# Output from scripts
+*.log
+
+# System files
+.DS_Store
+
+
+authorized_keys.tpl
+.env
