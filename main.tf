@@ -68,6 +68,14 @@ module "common_sg" {
       from_port = 9000
       to_port   = 9000
       ip        = "0.0.0.0/0"
+      description = "MiniO API"
+    },
+    {
+      protocol  = "tcp"
+      from_port = 9001
+      to_port   = 9001
+      ip        = "0.0.0.0/0"
+      description = "MiniO WebUI"
     },
     {
       protocol    = "tcp"
