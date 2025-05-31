@@ -2,6 +2,7 @@
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
+
 terraform {
   required_providers {
     cloudflare = {
@@ -11,19 +12,19 @@ terraform {
   }
 }
 
-data "aws_instance" "target_instance" {
-  instance_id = var.ec2_instance_id
-}
-
-resource "cloudflare_record" "subdomain" {
-  zone_id = var.cloudflare_zone_id
-  name    = var.subdomain
-  value   = var.use_elastic_ip ? var.elastic_ip : data.aws_instance.target_instance.public_ip
-  type    = "A"
-  ttl     = var.ttl
-  proxied = var.enable_proxy
-}
-
+# Get zone information
 data "cloudflare_zone" "domain" {
   zone_id = var.cloudflare_zone_id
+}
+
+# Create DNS records for each subdomain mapping
+resource "cloudflare_record" "subdomains" {
+  for_each = var.subdomain_mappings
+
+  zone_id = var.cloudflare_zone_id
+  name    = each.key
+  value   = each.value.target_ip
+  type    = "A"
+  ttl     = each.value.ttl != null ? each.value.ttl : var.default_ttl
+  proxied = each.value.proxied != null ? each.value.proxied : var.default_proxied
 }

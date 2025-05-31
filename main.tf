@@ -1,136 +1,92 @@
-data "aws_ami" "amazon_linux_amd64" {
-  most_recent = true
-  owners = ["amazon"]
+# Create VPC with public and private subnets
+module "vpc" {
+  source = "./modules/vpc"
 
-  filter {
-    name = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-  }
+  name = var.aws_project
 
-  filter {
-    name = "architecture"
-    values = ["x86_64"]
-  }
-}
-resource "tls_private_key" "ssh_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-resource "aws_key_pair" "ecs_key" {
-  key_name   = "${terraform.workspace}-${var.app_name}-ecs-key"
-  public_key = tls_private_key.ssh_key.public_key_openssh
+  cidr                 = var.aws_vpc_config.cidr_block
+  enable_dns_hostnames = var.aws_vpc_config.enable_dns_hostnames
+  enable_dns_support   = var.aws_vpc_config.enable_dns_support
+  public_subnets       = var.aws_vpc_config.public_subnets_cidr
+  private_subnets      = var.aws_vpc_config.private_subnets_cidr
+  azs                  = local.selected_azs
+  gateway_instance     = module.instances.network_interfaces["${var.aws_project}-gateway"]
 }
 
-module "network" {
-  source = "./modules/network"
-}
+module "instances" {
+  source = "./modules/instance"
 
-module "common_sg" {
-  source      = "./modules/security_group"
-  name        = "${var.app_name}-rds"
-  vpc_id      = module.network.vpc_id
-  description = "Security Group for RDS"
-  ingress_rules_with_cidr = [
+  subnet_id = module.vpc.private_subnets_id[2]
+  security_groups = [module.servers_sg.id]
+  key_name = var.aws_keyname
+  ami = local.ec2_ami
+  instance_type = "t2.micro"
+  ebs_size = 8
+  instances = [
     {
-      protocol  = "tcp"
-      from_port = 22
-      to_port   = 22
-      ip        = "0.0.0.0/0"
+      name = "${var.aws_project}-gateway"
+      private_ips = local.gateway_private_ips
+      subnet_id = module.vpc.public_subnets_id[0]
+      source_dest_check = false
+      user_data = file("./scripts/bastion-init.sh")
+      instance_type = var.bastion_host_instance_type
+      ebs_size = var.bastion_host_ebs_size
+      security_groups = [module.gateway_sg.id]
     },
     {
-      protocol  = "tcp"
-      from_port = 80
-      to_port   = 80
-      ip        = "0.0.0.0/0"
+      name = "${var.aws_project}-storage-servers"
+      private_ips = local.storage_servers_ips
+      instance_type = var.storage_servers_instance_type
+      ebs_size = var.storage_servers_ebs_size
     },
     {
-      protocol  = "tcp"
-      from_port = 443
-      to_port   = 443
-      ip        = "0.0.0.0/0"
+      name = "${var.aws_project}-infer-servers"
+      private_ips = local.infer_servers_ips
+      instance_type = var.infer_servers_instance_type
+      ebs_size = var.infer_servers_ebs_size
+      user_data = templatefile("${path.root}/scripts/infer-setup/user_data_training.tpl", {
+        authorized_keys_content = file("${path.root}/authorized_keys.tpl")
+        docker_compose_content  = file("${path.root}/scripts/infer-setup/docker-compose.yml")
+        env_content             = file("${path.root}/.env")
+        dockerfile_content      = file("${path.root}/scripts/infer-setup/Dockerfile")
+        requirements_content    = file("${path.root}/scripts/infer-setup/requirements.txt")
+        wait_for_it_content     = file("${path.root}/scripts/infer-setup/wait-for-it.sh")
+        start_sh_content        = file("${path.root}/scripts/infer-setup/start.sh")
+      })
     },
-    {
-      protocol    = "tcp"
-      from_port   = 6443
-      to_port     = 6443
-      ip          = "0.0.0.0/0"
-      description = "Kubernetes API"
-    },
-    {
-      protocol    = "tcp"
-      from_port   = 5000
-      to_port     = 5000
-      ip          = "0.0.0.0/0"
-      description = "MLflow UI"
-    },
-    {
-      protocol  = "tcp"
-      from_port = 9000
-      to_port   = 9000
-      ip        = "0.0.0.0/0"
-      description = "MiniO API"
-    },
-    {
-      protocol  = "tcp"
-      from_port = 9001
-      to_port   = 9001
-      ip        = "0.0.0.0/0"
-      description = "MiniO WebUI"
-    },
-    {
-      protocol    = "tcp"
-      from_port   = 8080
-      to_port     = 8080
-      ip          = "0.0.0.0/0"
-      description = "Airflow UI"
-    },
-  ]
-  egress_rules_with_cidr = [
-    {
-      protocol = "-1"
-      ip       = "0.0.0.0/0"
-    }
   ]
 }
 
-module "training_server" {
-  source = "./modules/ec2/training_server"
+module "EKS" {
+  source = "./modules/eks"
 
-  key_name          = aws_key_pair.ecs_key.key_name
-  subnet_id         = module.network.public_subnet_id
-  security_group_id = module.common_sg.id
-  aws_region        = var.aws_region
-  ami_id            = data.aws_ami.amazon_linux_amd64.id
+  name = var.aws_project
+  role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  k8s_version = "1.29"
+  cluster_vpc_cidr = var.aws_vpc_config.cidr_block
+  cluster_subnet_ids = module.vpc.private_subnets_id
+  service_ipv4_cidr = var.service_ipv4_cidr
+  eks_addons = ["vpc-cni", "kube-proxy", "coredns"]
+  node_group_subnet_ids = module.vpc.private_subnets_id
+  node_group_min_size = var.node_group_min_size
+  node_group_max_size = var.node_group_max_size
+  node_group_desired_size = var.node_group_desired_size
 }
 
-# module "inference_server" {
-#   source = "./modules/ec2/inference_server"
-#
-#   key_name         = aws_key_pair.ecs_key.key_name
-#   subnet_id        = module.network.public_subnet_id
-#   security_group_id = module.common_sg.id
-#   mlflow_tracking_uri = "http://${module.training_server.training_server_ip}:5000"
-#   aws_region = var.aws_region
-#   ami_id = data.aws_ami.amazon_linux_amd64.id
-# }
-
-# module "monitoring_server" {
-#   source = "./modules/ec2/monitoring_server"
-#
-#   key_name         = aws_key_pair.ecs_key.key_name
-#   subnet_id        = module.network.public_subnet_id
-#   security_group_id = module.common_sg.id
-#   inference_server_ip = module.inference_server.inference_server_ip
-#   ami_id = data.aws_ami.amazon_linux_arm64.id
-# }
-
-module "subdomain_for_ec2" {
+module "cloudflare_dns" {
   source = "./modules/cloudflare"
 
-  subdomain          = "stag.mlflow"
-  ec2_instance_id    = module.training_server.instance_id
-  enable_proxy       = false
-  ttl                = 1
   cloudflare_api_token = var.cloudflare_api_token
-  cloudflare_zone_id = var.cloudflare_zone_id
+  cloudflare_zone_id   = var.cloudflare_zone_id
+
+  subdomain_mappings = {
+    "mlflow.${var.domain_name}" = {
+      target_ip = data.aws_lb.main.dns_name
+      ttl       = 300
+      proxied   = true
+    }
+  }
+
+  default_ttl     = 1
+  default_proxied = false
 }

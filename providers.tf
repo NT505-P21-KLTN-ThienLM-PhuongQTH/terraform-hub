@@ -1,12 +1,16 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.86.0"
+provider "aws" {
+  region  = var.aws_region
+  # profile = var.aws_profile
+  default_tags {
+    tags = {
+      "Terraform"   = "true"
+      "Environment" = var.aws_environment
+      "Project"     = var.aws_project
+      "Owner"       = var.aws_owner
     }
   }
 }
-provider "aws" {
-  region = var.aws_region
-  profile = "awslab"
-}
+
+# provider "tls" {}
+# provider "http" {}
+provider "local" {}

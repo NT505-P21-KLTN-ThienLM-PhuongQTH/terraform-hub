@@ -1,15 +1,18 @@
 # cloudflare/outputs.tf
-output "subdomain_name" {
-  description = "Tên subdomain đã tạo"
-  value       = "${var.subdomain}.${data.cloudflare_zone.domain.name}"
+output "dns_records" {
+  description = "Created DNS records"
+  value = {
+    for k, v in cloudflare_record.subdomains : k => {
+      name     = v.name
+      value    = v.value
+      hostname = v.hostname
+      proxied  = v.proxied
+      ttl      = v.ttl
+    }
+  }
 }
 
-output "target_ip" {
-  description = "IP address mà subdomain trỏ đến"
-  value       = var.use_elastic_ip ? var.elastic_ip : data.aws_instance.target_instance.public_ip
-}
-
-output "record_id" {
-  description = "ID của DNS record"
-  value       = cloudflare_record.subdomain.id
+output "zone_name" {
+  description = "Zone name"
+  value       = data.cloudflare_zone.domain.name
 }
