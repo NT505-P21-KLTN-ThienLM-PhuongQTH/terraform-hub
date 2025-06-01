@@ -25,5 +25,6 @@ locals {
   ec2_ami             = var.ami != "" ? var.ami : data.aws_ami.ubuntu.id
   gateway_private_ips = [cidrhost(module.vpc.public_subnets_cidr[0], 10)]
   storage_servers_ips = [cidrhost(module.vpc.private_subnets_cidr[2], 10)]
-  infer_servers_ips   = [cidrhost(module.vpc.private_subnets_cidr[2], 11)]
+  registry_servers_ips = [cidrhost(module.vpc.private_subnets_cidr[2], 11)]
+  infer_servers_ips = [cidrhost(module.vpc.private_subnets_cidr[2], 12)]
 }

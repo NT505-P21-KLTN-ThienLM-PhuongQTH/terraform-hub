@@ -1,3 +1,11 @@
+resource "tls_private_key" "ssh_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+resource "aws_key_pair" "ecs_key" {
+  key_name   = "${terraform.workspace}-key"
+  public_key = tls_private_key.ssh_key.public_key_openssh
+}
 # Create VPC with public and private subnets
 module "vpc" {
   source = "./modules/vpc"
@@ -18,7 +26,7 @@ module "instances" {
 
   subnet_id = module.vpc.private_subnets_id[2]
   security_groups = [module.servers_sg.id]
-  key_name = var.aws_keyname
+  key_name = aws_key_pair.ecs_key.key_name
   ami = local.ec2_ami
   instance_type = "t2.micro"
   ebs_size = 8
@@ -40,8 +48,15 @@ module "instances" {
       ebs_size = var.storage_servers_ebs_size
     },
     {
+      name = "${var.aws_project}-registry-servers"
+      private_ips = local.registry_servers_ips
+      instance_type = var.registry_servers_instance_type
+      ebs_size = var.registry_servers_ebs_size
+    },
+    {
       name = "${var.aws_project}-infer-servers"
       private_ips = local.infer_servers_ips
+      subnet_id = module.vpc.public_subnets_id[0]
       instance_type = var.infer_servers_instance_type
       ebs_size = var.infer_servers_ebs_size
       user_data = templatefile("${path.root}/scripts/infer-setup/user_data_training.tpl", {
@@ -71,22 +86,4 @@ module "EKS" {
   node_group_min_size = var.node_group_min_size
   node_group_max_size = var.node_group_max_size
   node_group_desired_size = var.node_group_desired_size
-}
-
-module "cloudflare_dns" {
-  source = "./modules/cloudflare"
-
-  cloudflare_api_token = var.cloudflare_api_token
-  cloudflare_zone_id   = var.cloudflare_zone_id
-
-  subdomain_mappings = {
-    "mlflow.${var.domain_name}" = {
-      target_ip = data.aws_lb.main.dns_name
-      ttl       = 300
-      proxied   = true
-    }
-  }
-
-  default_ttl     = 1
-  default_proxied = false
 }

@@ -7,27 +7,25 @@ variable "aws_region" {
 variable "aws_profile" {
   description = "AWS profile"
   type        = string
-  default     = "default"
-}
-
-variable "aws_keyname" {
-  description = "AWS keypair name"
-  type        = string
+  default     = "awslab"
 }
 
 variable "aws_environment" {
   description = "Environment"
   type        = string
+  default     = "dev"
 }
 
 variable "aws_project" {
   description = "Project"
   type        = string
+  default     = "CI_build_failure_prediction"
 }
 
 variable "aws_owner" {
   description = "Owner"
   type        = string
+  default     = "ThienML_PhuongQTH"
 }
 
 variable "aws_vpc_config" {
@@ -72,8 +70,17 @@ variable "storage_servers_ebs_size" {
   default     = 8
 }
 
+variable "registry_servers_instance_type" {
+  type        = string
+  default     = "t2.micro"
+}
+
+variable "registry_servers_ebs_size" {
+  type        = number
+  default     = 8
+}
+
 variable "infer_servers_instance_type" {
-  description = "Security servers instance type"
   type        = string
   default     = "t2.micro"
 }
@@ -84,51 +91,10 @@ variable "infer_servers_ebs_size" {
   default     = 20
 }
 
-variable "autoscaling_group_instance_type" {
-  description = "Autoscaling group instance type"
-  type        = string
-  default     = "t2.micro"
-}
-
-variable "autoscaling_group_min_size" {
-  description = "Autoscaling group minimum size"
-  type        = number
-  default     = 1
-}
-
-variable "autoscaling_group_max_size" {
-  description = "Autoscaling group maximum size"
-  type        = number
-  default     = 1
-}
-
-variable "autoscaling_group_desired_capacity" {
-  description = "Autoscaling group desired capacity"
-  type        = number
-  default     = 1
-}
-
-variable "autoscaling_group_health_check_path" {
-  description = "Autoscaling group health check path"
-  type        = string
-  default     = "/"
-}
-
-variable "autoscaling_group_health_check_port" {
-  description = "Autoscaling group health check port"
-  type        = number
-  default     = 80
-}
-
-variable "autoscaling_group_health_check_protocol" {
-  description = "Autoscaling group health check protocol"
-  type        = string
-  default     = "HTTP"
-}
-
 variable "service_ipv4_cidr" {
   description = "CIDR block for the service network"
   type        = string
+  default     = "10.0.0.0/16"
 }
 
 variable "node_group_min_size" {
@@ -157,9 +123,4 @@ variable "cloudflare_api_token" {
 variable "cloudflare_zone_id" {
   description = "Cloudflare zone ID"
   type        = string
-}
-variable "domain_name" {
-  description = "Base domain name"
-  type        = string
-  default     = "th1enlm02.live"
 }

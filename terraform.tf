@@ -1,8 +1,8 @@
 terraform {
   cloud { 
-    organization = "DevOpsUIT"
+    organization = "CI_build_failure_prediction"
     workspaces { 
-      name = "NT548P11-Group03"
+      name = "general"
     } 
   }
   
