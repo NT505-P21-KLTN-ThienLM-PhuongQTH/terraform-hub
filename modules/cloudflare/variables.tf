@@ -4,23 +4,6 @@ variable "cloudflare_zone_id" {
   type        = string
 }
 
-variable "subdomain" {
-  description = "Tên subdomain (không bao gồm domain chính)"
-  type        = string
-}
-
-variable "use_elastic_ip" {
-  description = "Sử dụng Elastic IP thay vì public IP của EC2"
-  type        = bool
-  default     = false
-}
-
-variable "elastic_ip" {
-  description = "Elastic IP address nếu sử dụng"
-  type        = string
-  default     = ""
-}
-
 variable "cloudflare_api_token" {
   description = "API token của Cloudflare"
   type        = string

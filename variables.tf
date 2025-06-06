@@ -4,12 +4,6 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "aws_profile" {
-  description = "AWS profile"
-  type        = string
-  default     = "awslab"
-}
-
 variable "aws_environment" {
   description = "Environment"
   type        = string
@@ -72,12 +66,12 @@ variable "storage_servers_ebs_size" {
 
 variable "registry_servers_instance_type" {
   type        = string
-  default     = "t2.micro"
+  default     = "t2.small"
 }
 
 variable "registry_servers_ebs_size" {
   type        = number
-  default     = 8
+  default     = 30
 }
 
 variable "infer_servers_instance_type" {
@@ -94,7 +88,7 @@ variable "infer_servers_ebs_size" {
 variable "service_ipv4_cidr" {
   description = "CIDR block for the service network"
   type        = string
-  default     = "10.0.0.0/16"
+  default     = "172.20.0.0/16"
 }
 
 variable "node_group_min_size" {
@@ -123,4 +117,10 @@ variable "cloudflare_api_token" {
 variable "cloudflare_zone_id" {
   description = "Cloudflare zone ID"
   type        = string
+}
+
+variable "domain_name" {
+  description = "Domain name for the Cloudflare DNS records"
+  type        = string
+  default     = "th1enlm02.live"
 }

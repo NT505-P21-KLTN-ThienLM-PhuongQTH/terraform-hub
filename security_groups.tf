@@ -27,13 +27,20 @@ module "gateway_sg" {
             protocol    = "icmp"
             ip          = "0.0.0.0/0"
         },
+        # {
+        #     description      = "Allow all traffic from servers"
+        #     from_port        = -1
+        #     to_port          = -1
+        #     protocol         = "-1"
+        #     ip               = var.aws_vpc_config.cidr_block
+        # },
         {
             description      = "Allow all traffic from servers"
             from_port        = -1
             to_port          = -1
             protocol         = "-1"
-            ip               = var.aws_vpc_config.cidr_block
-        }
+            ip               = "0.0.0.0/0"
+        },
     ]
 
     egress_rules = [
@@ -183,6 +190,46 @@ module "servers_sg" {
             to_port          = -1
             protocol         = "-1"
             security_group_id = module.haproxy_sg.id
+        }
+    ]
+    egress_rules = [
+        {
+            description = "Allow all outbound traffic"
+            from_port   = -1
+            to_port     = -1
+            protocol    = "-1"
+            ip          = "0.0.0.0/0"
+        }
+    ]
+}
+
+module "infer_sg"{
+    source      = "./modules/security_group"
+    name        = "${var.aws_project}-infer-sg"
+    description = "Security group for infer servers"
+    vpc_id      = module.vpc.vpc_id
+
+    ingress_rules = [
+        {
+            from_port   = 5000
+            to_port     = 5000
+            protocol    = "tcp"
+            security_group_id = module.gateway_sg.id
+            description = "Allow Infer Server Access"
+        },
+        {
+            from_port   = 8080
+            to_port     = 8080
+            protocol    = "tcp"
+            security_group_id = module.gateway_sg.id
+            description = "Allow Infer Server Web Access"
+        },
+        {
+            description      = "Allow all from gateway"
+            from_port        = -1
+            to_port          = -1
+            protocol         = "-1"
+            security_group_id = module.gateway_sg.id
         }
     ]
     egress_rules = [

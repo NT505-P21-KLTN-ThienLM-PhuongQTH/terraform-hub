@@ -13,3 +13,7 @@ output "network_interfaces" {
     for network_interface in aws_network_interface.main : network_interface.tags_all["Name"] => network_interface.id
   }
 }
+
+output "instance_ids" {
+  value = aws_instance.main[*].id
+}
