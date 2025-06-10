@@ -1,11 +1,11 @@
 terraform {
-  cloud { 
+  cloud {
     organization = "CI_build_failure_prediction"
-    workspaces { 
-      name = "general"
-    } 
+    workspaces {
+      name = "production"
+    }
   }
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -22,6 +22,10 @@ terraform {
     local = {
       source  = "hashicorp/local"
       version = "2.5.2"
+    }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
     }
   }
   required_version = ">= 1.2.0"

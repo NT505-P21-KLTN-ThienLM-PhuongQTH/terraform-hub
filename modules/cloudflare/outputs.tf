@@ -6,7 +6,6 @@ output "dns_records" {
       name     = v.name
       value    = v.value
       hostname = v.hostname
-      proxied  = v.proxied
       ttl      = v.ttl
     }
   }

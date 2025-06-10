@@ -13,7 +13,6 @@ variable "cloudflare_api_token" {
 variable "subdomain_mappings" {
   description = "Map of subdomain to target configuration"
   type = map(object({
-    target_ip = string
     ttl       = optional(number)
     proxied   = optional(bool)
   }))
@@ -29,4 +28,14 @@ variable "default_proxied" {
   description = "Default proxy setting for DNS records"
   type        = bool
   default     = false
+}
+
+variable "domain_name" {
+  description = "Domain name for the DNS records"
+  type        = string
+}
+
+variable "gateway_ip" {
+  description = "IP address of the gateway instance"
+  type        = string
 }

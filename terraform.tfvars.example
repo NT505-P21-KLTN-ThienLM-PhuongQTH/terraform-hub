@@ -1,0 +1,27 @@
+aws_region      = "us-east-1"
+aws_profile     = "aws-learner-lab"
+aws_environment = "prod"
+aws_project     = "thesis"
+aws_owner       = "ThienLM_PhuongQTH"
+aws_keyname     = "th1enlm02-key"
+
+# VPC
+aws_vpc_config = {
+  cidr_block                   = "10.0.0.0/16"
+  enable_dns_support           = true
+  enable_dns_hostnames         = true
+  public_subnets_cidr          = ["10.0.100.0/24"]
+  private_subnets_cidr         = ["10.0.10.0/24", "10.0.20.0/24", "10.0.30.0/24", "10.0.1.0/24", "10.0.2.0/24"]
+  number_of_availability_zones = 3
+  enable_nat_gateway           = false
+}
+
+# EKS
+service_ipv4_cidr = "192.168.0.0/16"
+node_group_min_size = 2
+node_group_max_size = 3
+node_group_desired_size = 3
+
+# Cloudflare
+cloudflare_api_token = ""
+cloudflare_zone_id   = ""

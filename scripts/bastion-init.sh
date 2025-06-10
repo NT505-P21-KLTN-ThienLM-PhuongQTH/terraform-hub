@@ -20,9 +20,5 @@ cat <<EOF > /home/ubuntu/.ssh/authorized_keys
 ${authorized_keys_content}
 EOF
 
-cat > /home/ubuntu/.ssh/id_rsa << 'EOF'
-${private_key_content}
-EOF
-
 chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa
 chmod 600 /home/ubuntu/.ssh/id_rsa

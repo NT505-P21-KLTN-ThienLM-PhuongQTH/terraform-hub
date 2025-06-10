@@ -4,22 +4,30 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "aws_profile" {
+  description = "AWS profile"
+  type        = string
+  default     = "default"
+}
+
+variable "aws_keyname" {
+  description = "AWS keypair name"
+  type        = string
+}
+
 variable "aws_environment" {
   description = "Environment"
   type        = string
-  default     = "dev"
 }
 
 variable "aws_project" {
   description = "Project"
   type        = string
-  default     = "CI_build_failure_prediction"
 }
 
 variable "aws_owner" {
   description = "Owner"
   type        = string
-  default     = "ThienML_PhuongQTH"
 }
 
 variable "aws_vpc_config" {
@@ -30,7 +38,8 @@ variable "aws_vpc_config" {
     enable_dns_hostnames         = bool,
     public_subnets_cidr          = list(string),
     private_subnets_cidr         = list(string),
-    number_of_availability_zones = number
+    number_of_availability_zones = number,
+    enable_nat_gateway           = bool
   })
 }
 
@@ -40,51 +49,66 @@ variable "ami" {
   default     = ""
 }
 
-variable "bastion_host_instance_type" {
-  description = "Bastion host instance type"
+# Variable for instance types and EBS sizes
+variable "gateway_instance_type" {
+  description = "Gateway instance type"
   type        = string
   default     = "t2.micro"
 }
 
-variable "bastion_host_ebs_size" {
-  description = "Bastion host EBS size"
+variable "gateway_ebs_size" {
+  description = "Gateway EBS size"
+  type        = number
+  default     = 8
+}
+variable "database_server_instance_type" {
+  description = "Database server instance type"
+  type        = string
+  default     = "t2.micro"
+}
+
+variable "database_server_ebs_size" {
+  description = "Database server EBS size"
   type        = number
   default     = 8
 }
 
-variable "storage_servers_instance_type" {
-  description = "Storage servers instance type"
+variable "storage_server_instance_type" {
+  description = "Storage server instance type"
   type        = string
   default     = "t2.micro"
 }
 
-variable "storage_servers_ebs_size" {
-  description = "Storage servers EBS size"
+variable "storage_server_ebs_size" {
+  description = "Storage server EBS size"
   type        = number
   default     = 8
 }
 
-variable "registry_servers_instance_type" {
-  type        = string
-  default     = "t2.small"
-}
-
-variable "registry_servers_ebs_size" {
-  type        = number
-  default     = 30
-}
-
-variable "infer_servers_instance_type" {
+variable "mlflow_server_instance_type" {
+  description = "MLflow server instance type"
   type        = string
   default     = "t2.micro"
 }
 
-variable "infer_servers_ebs_size" {
-  description = "Security servers EBS size"
+variable "mlflow_server_ebs_size" {
+  description = "MLflow server EBS size"
   type        = number
-  default     = 20
+  default     = 8
 }
 
+# variable "infer_servers_instance_type" {
+#   type        = string
+#   default     = "t2.micro"
+# }
+
+# variable "infer_servers_ebs_size" {
+#   description = "Security servers EBS size"
+#   type        = number
+#   default     = 20
+# }
+
+# Variable for EKS service CIDR block
 variable "service_ipv4_cidr" {
   description = "CIDR block for the service network"
   type        = string
@@ -109,6 +133,7 @@ variable "node_group_desired_size" {
   default     = 1
 }
 
+# Variable for Cloudflare API token and zone ID
 variable "cloudflare_api_token" {
   description = "Cloudflare API token"
   type        = string

@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Config SSH
-mkdir -p /home/ec2-user/.ssh
-cat <<EOF > /home/ec2-user/.ssh/authorized_keys
-${authorized_keys_content}
-EOF
-
 # Cài đặt Docker
 yum update -y
 amazon-linux-extras install docker -y

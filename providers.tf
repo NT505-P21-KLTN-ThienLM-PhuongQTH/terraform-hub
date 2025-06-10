@@ -14,3 +14,6 @@ provider "aws" {
 # provider "tls" {}
 # provider "http" {}
 provider "local" {}
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}

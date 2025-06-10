@@ -1,11 +1,3 @@
-resource "tls_private_key" "ssh_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-resource "aws_key_pair" "ecs_key" {
-  key_name   = "${terraform.workspace}-key"
-  public_key = tls_private_key.ssh_key.public_key_openssh
-}
 # Create VPC with public and private subnets
 module "vpc" {
   source = "./modules/vpc"
@@ -18,66 +10,72 @@ module "vpc" {
   public_subnets       = var.aws_vpc_config.public_subnets_cidr
   private_subnets      = var.aws_vpc_config.private_subnets_cidr
   azs                  = local.selected_azs
+  enable_nat_gateway   = var.aws_vpc_config.enable_nat_gateway
   gateway_instance     = module.instances.network_interfaces["${var.aws_project}-gateway"]
+  map_public_ip_on_launch = true
 }
 
 module "instances" {
   source = "./modules/instance"
 
-  subnet_id = module.vpc.private_subnets_id[2]
-  security_groups = [module.servers_sg.id]
-  key_name = aws_key_pair.ecs_key.key_name
+  subnet_id = module.vpc.public_subnets_id[0]
+  security_groups = [module.default_sg.id]
+  key_name = var.aws_keyname
   ami = local.ec2_ami
   instance_type = "t2.micro"
   ebs_size = 8
   instances = [
     {
       name = "${var.aws_project}-gateway"
-      private_ips = local.gateway_private_ips
+      private_ips = local.gateway_ips
       subnet_id = module.vpc.public_subnets_id[0]
       source_dest_check = false
       user_data = templatefile("${path.root}/scripts/bastion-init.sh", {
         authorized_keys_content = file("${path.root}/authorized_keys.tpl")
-        private_key_content = tls_private_key.ssh_key.private_key_pem
       })
-      instance_type = var.bastion_host_instance_type
-      ebs_size = var.bastion_host_ebs_size
+      instance_type = var.gateway_instance_type
+      ebs_size = var.gateway_ebs_size
       security_groups = [module.gateway_sg.id]
     },
     {
+      name = "${var.aws_project}-database-servers"
+      private_ips = local.database_server_ips
+      subnet_id = module.vpc.private_subnets_id[0]
+      instance_type = var.database_server_instance_type
+      ebs_size = var.database_server_ebs_size
+      security_groups = [module.database_sg.id]
+    },
+    {
       name = "${var.aws_project}-storage-servers"
-      private_ips = local.storage_servers_ips
-      instance_type = var.storage_servers_instance_type
-      ebs_size = var.storage_servers_ebs_size
+      private_ips = local.storage_server_ips
+      subnet_id = module.vpc.private_subnets_id[1]
+      instance_type = var.storage_server_instance_type
+      ebs_size = var.storage_server_ebs_size
+      security_groups = [module.storage_sg.id]
     },
     {
-      name = "${var.aws_project}-registry-servers"
-      private_ips = local.registry_servers_ips
-      instance_type = var.registry_servers_instance_type
-      ebs_size = var.registry_servers_ebs_size
-    },
-    {
-      name = "${var.aws_project}-infer-servers"
-      private_ips = local.infer_servers_ips
-      instance_type = var.infer_servers_instance_type
-      ebs_size = var.infer_servers_ebs_size
-      # user_data = templatefile("${path.root}/scripts/infer-setup/user_data_training.tpl", {
-      #   authorized_keys_content = file("${path.root}/authorized_keys.tpl")
-      #   docker_compose_content  = file("${path.root}/scripts/infer-setup/docker-compose.yml")
-      #   env_content             = file("${path.root}/.env")
-      #   dockerfile_content      = file("${path.root}/scripts/infer-setup/Dockerfile")
-      #   requirements_content    = file("${path.root}/scripts/infer-setup/requirements.txt")
-      #   wait_for_it_content     = file("${path.root}/scripts/infer-setup/wait-for-it.sh")
-      #   start_sh_content        = file("${path.root}/scripts/infer-setup/start.sh")
-      # })
-        security_groups = [module.infer_sg.id]
+      name = "${var.aws_project}-mlflow-server"
+      private_ips = local.mlflow_server_ips
+      subnet_id = module.vpc.private_subnets_id[2]
+      instance_type = var.mlflow_server_instance_type
+      ebs_size = var.mlflow_server_ebs_size
+      security_groups = [module.mlflow_sg.id]
+      user_data = templatefile("${path.root}/scripts/infer-setup/user_data_training.tpl", {
+        # authorized_keys_content = file("${path.root}/authorized_keys.tpl")
+        docker_compose_content  = file("${path.root}/scripts/infer-setup/docker-compose.yml")
+        env_content             = file("${path.root}/scripts/infer-setup/.env")
+        dockerfile_content      = file("${path.root}/scripts/infer-setup/Dockerfile")
+        requirements_content    = file("${path.root}/scripts/infer-setup/requirements.txt")
+        wait_for_it_content     = file("${path.root}/scripts/infer-setup/wait-for-it.sh")
+        start_sh_content        = file("${path.root}/scripts/infer-setup/start.sh")
+      })
     },
   ]
 }
 
 # module "EKS" {
 #   source = "./modules/eks"
-#
+
 #   name = var.aws_project
 #   role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
 #   k8s_version = "1.29"
@@ -96,26 +94,61 @@ module "cloudflare_dns" {
 
   cloudflare_api_token = var.cloudflare_api_token
   cloudflare_zone_id   = var.cloudflare_zone_id
+  domain_name          = var.domain_name
+  gateway_ip           = module.instances.instances["${var.aws_project}-gateway"].public_ip
 
   subdomain_mappings = {
-    "mlflow2.${var.domain_name}" = {
-      target_ip = module.instances.instances["${var.aws_project}-gateway"].public_ip
-      proxied   = true
-    }
-    "inference.${var.domain_name}" = {
-      target_ip = module.instances.instances["${var.aws_project}-gateway"].public_ip
-      proxied   = true
-    }
     "minio.${var.domain_name}" = {
-      target_ip = module.instances.instances["${var.aws_project}-gateway"].public_ip
-      proxied   = true
+      ttl     = 1
+      proxied = false
     }
     "harbor.${var.domain_name}" = {
-      target_ip = module.instances.instances["${var.aws_project}-gateway"].public_ip
-      proxied   = true
+      ttl     = 1
+      proxied = false
+    }
+    "vault.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "mlflow.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "grafana.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "argocd.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "ciflow.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "app-api.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "ghtorrent-api.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "model-api.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
     }
   }
 
   default_ttl     = 1
   default_proxied = false
+
+  providers = {
+    cloudflare = cloudflare
+  }
+
+  depends_on = [
+    module.instances,
+    module.vpc
+  ]
 }

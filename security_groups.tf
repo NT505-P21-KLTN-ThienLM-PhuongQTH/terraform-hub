@@ -1,46 +1,18 @@
-# Create security group for gateway instance
-module "gateway_sg" {
+# Default security groups for the AWS project
+module "default_sg" {
     source      = "./modules/security_group"
-    name        = "${var.aws_project}-gateway-sg"
-    description = "Security group for gateway instance"
+    name        = "${var.aws_project}-default-sg"
+    description = "Default security group for the AWS project"
     vpc_id      = module.vpc.vpc_id
 
     ingress_rules = [
         {
-            description = "Allow OpenVPN Access"
-            from_port   = 1194
-            to_port     = 1194
-            protocol    = "udp"
-            ip          = "0.0.0.0/0"
-        },
-        {
-            description = "Allow SSH Access"
-            from_port   = 22
-            to_port     = 22
-            protocol    = "tcp"
-            ip          = "0.0.0.0/0"
-        },
-        {
-            description = "Allow Ping"
+            description = "Allow all inbound traffic from the VPC CIDR block"
             from_port   = -1
             to_port     = -1
-            protocol    = "icmp"
-            ip          = "0.0.0.0/0"
-        },
-        # {
-        #     description      = "Allow all traffic from servers"
-        #     from_port        = -1
-        #     to_port          = -1
-        #     protocol         = "-1"
-        #     ip               = var.aws_vpc_config.cidr_block
-        # },
-        {
-            description      = "Allow all traffic from servers"
-            from_port        = -1
-            to_port          = -1
-            protocol         = "-1"
-            ip               = "0.0.0.0/0"
-        },
+            protocol    = "-1"
+            ip          = var.aws_vpc_config.cidr_block
+        }
     ]
 
     egress_rules = [
@@ -54,14 +26,21 @@ module "gateway_sg" {
     ]
 }
 
-# Create security group for load balancer
-module "load_balancer_sg" {
+# Create security group for gateway, database, storage, and MLflow servers
+module "gateway_sg" {
     source      = "./modules/security_group"
-    name        = "${var.aws_project}-load-balancer-sg"
-    description = "Security group for load balancer"
+    name        = "${var.aws_project}-gateway-sg"
+    description = "Security group for gateway instance"
     vpc_id      = module.vpc.vpc_id
 
     ingress_rules = [
+        {
+            description = "Allow SSH Access"
+            from_port   = 22
+            to_port     = 22
+            protocol    = "tcp"
+            ip          = "0.0.0.0/0"
+        },
         {
             description = "Allow HTTP Access"
             from_port   = 80
@@ -75,6 +54,61 @@ module "load_balancer_sg" {
             to_port     = 443
             protocol    = "tcp"
             ip          = "0.0.0.0/0"
+        },
+        {
+            description = "Allow all traffic from servers"
+            from_port   = -1
+            to_port     = -1
+            protocol    = "-1"
+            ip          = var.aws_vpc_config.cidr_block
+        }
+    ]
+
+    egress_rules = [
+        {
+            description = "Allow all outbound traffic"
+            from_port   = -1
+            to_port     = -1
+            protocol    = "-1"
+            ip          = "0.0.0.0/0"
+        }
+    ]
+}
+
+module "database_sg" {
+    source      = "./modules/security_group"
+    name        = "${var.aws_project}-database-sg"
+    description = "Security group for database servers"
+    vpc_id      = module.vpc.vpc_id
+
+    ingress_rules = [
+        {
+            description = "Allow SSH Access"
+            from_port   = 22
+            to_port     = 22
+            protocol    = "tcp"
+            ip          = "0.0.0.0/0"
+        },
+        {
+            from_port   = 3306
+            to_port     = 3306
+            protocol    = "tcp"
+            description = "Allow MySQL Access"
+            ip          = var.aws_vpc_config.cidr_block
+        },
+        {
+            from_port   = 27017
+            to_port     = 27017
+            protocol    = "tcp"
+            ip          = var.aws_vpc_config.cidr_block
+            description = "Allow MongoDB Access"
+        },
+        {
+            from_port   = 6379
+            to_port     = 6379
+            protocol    = "tcp"
+            ip          = var.aws_vpc_config.cidr_block
+            description = "Allow Redis Access"
         }
     ]
     egress_rules = [
@@ -88,108 +122,54 @@ module "load_balancer_sg" {
     ]
 }
 
-module "haproxy_sg" {
+module "storage_sg" {
     source      = "./modules/security_group"
-    name        = "${var.aws_project}-haproxy-sg"
-    description = "Security group for haproxy"
+    name        = "${var.aws_project}-storage-sg"
+    description = "Security group for storage servers"
     vpc_id      = module.vpc.vpc_id
 
     ingress_rules = [
         {
-            description = "Allow traffic http from load balancer"
+            description = "Allow SSH Access"
+            from_port   = 22
+            to_port     = 22
+            protocol    = "tcp"
+            ip          = "0.0.0.0/0"
+        },
+        {
+            description       = "Allow all from gateway"
+            from_port         = -1
+            to_port           = -1
+            protocol          = "-1"
+            security_group_id = module.gateway_sg.id
+        },
+        {
+            description = "Allow Harbor Access"
             from_port   = 80
             to_port     = 80
             protocol    = "tcp"
-            security_group_id = module.load_balancer_sg.id
-        },
-        {
-            description = "Allow https traffic from load balancer"
-            from_port   = 443
-            to_port     = 443
-            protocol    = "tcp"
-            security_group_id = module.load_balancer_sg.id
-        },
-        {
-            description      = "Allow all from gateway"
-            from_port        = -1
-            to_port          = -1
-            protocol         = "-1"
-            security_group_id = module.gateway_sg.id
-        },
-        {
-            description = "Allow Node Exporter Access"
-            from_port   = 9100 # Node Exporter
-            to_port     = 9100
-            protocol    = "tcp"
             ip          = var.aws_vpc_config.cidr_block
         },
-    ]
-    egress_rules = [
         {
-            description = "Allow all outbound traffic"
-            from_port   = -1
-            to_port     = -1
-            protocol    = "-1"
-            ip          = "0.0.0.0/0"
-        }
-    ]
-}
-
-module "servers_sg" {
-    source      = "./modules/security_group"
-    name        = "${var.aws_project}-servers-sg"
-    description = "Security group for servers"
-    vpc_id      = module.vpc.vpc_id
-
-    ingress_rules = [
-        {
-            description      = "Allow all from gateway"
-            from_port        = -1
-            to_port          = -1
-            protocol         = "-1"
-            security_group_id = module.gateway_sg.id
-        },
-        {
-            description      = "Allow Harbor Access"
-            from_port        = 80
-            to_port          = 80
-            protocol         = "tcp"
-            ip               = var.aws_vpc_config.cidr_block
-        },
-        {
-            description      = "Allow MinIO Access"
-            from_port        = 9001
-            to_port          = 9001
-            protocol         = "tcp"
-            ip               = var.aws_vpc_config.cidr_block
-        },
-        {
-            description      = "Allow MinIO API & SonarQube Access"
-            from_port        = 9000
-            to_port          = 9000
-            protocol         = "tcp"
-            ip               = var.aws_vpc_config.cidr_block
-        },
-        {
-            description = "Allow Node Exporter Access"
-            from_port   = 9100 # Node Exporter
-            to_port     = 9100
+            description = "Allow MinIO Access"
+            from_port   = 9001
+            to_port     = 9001
             protocol    = "tcp"
             ip          = var.aws_vpc_config.cidr_block
         },
         {
-            description      = "Allow Vault Access"
-            from_port        = 8200
-            to_port          = 8200
-            protocol         = "tcp"
-            ip = var.aws_vpc_config.cidr_block
+            description = "Allow MinIO API Access"
+            from_port   = 9000
+            to_port     = 9000
+            protocol    = "tcp"
+            ip          = var.aws_vpc_config.cidr_block
         },
         {
-            description      = "Allow traffic from haproxy"
-            from_port        = -1
-            to_port          = -1
-            protocol         = "-1"
-            security_group_id = module.haproxy_sg.id
+            description = "Allow Vault Access"
+            from_port   = 8200
+            to_port     = 8200
+            protocol    = "tcp"
+            ip          = var.aws_vpc_config.cidr_block
         }
     ]
     egress_rules = [
@@ -203,32 +183,39 @@ module "servers_sg" {
     ]
 }
 
-module "infer_sg"{
+module "mlflow_sg" {
     source      = "./modules/security_group"
-    name        = "${var.aws_project}-infer-sg"
-    description = "Security group for infer servers"
+    name        = "${var.aws_project}-mlflow-sg"
+    description = "Security group for MLflow server"
     vpc_id      = module.vpc.vpc_id
 
     ingress_rules = [
         {
-            from_port   = 5000
-            to_port     = 5000
+            description = "Allow SSH Access"
+            from_port   = 22
+            to_port     = 22
             protocol    = "tcp"
-            security_group_id = module.gateway_sg.id
-            description = "Allow Infer Server Access"
+            ip          = "0.0.0.0/0"
         },
         {
-            from_port   = 8080
-            to_port     = 8080
-            protocol    = "tcp"
+            from_port         = 5000
+            to_port           = 5000
+            protocol          = "tcp"
             security_group_id = module.gateway_sg.id
-            description = "Allow Infer Server Web Access"
+            description       = "Allow MLflow Server Access"
         },
         {
-            description      = "Allow all from gateway"
-            from_port        = -1
-            to_port          = -1
-            protocol         = "-1"
+            from_port         = 8080
+            to_port           = 8080
+            protocol          = "tcp"
+            security_group_id = module.gateway_sg.id
+            description       = "Allow MLflow Server Web Access"
+        },
+        {
+            description       = "Allow all from gateway"
+            from_port         = -1
+            to_port           = -1
+            protocol          = "-1"
             security_group_id = module.gateway_sg.id
         }
     ]

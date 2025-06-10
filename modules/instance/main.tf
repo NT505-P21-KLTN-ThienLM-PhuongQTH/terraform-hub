@@ -16,7 +16,7 @@ resource "aws_instance" "main" {
 
   ami           = var.instances[count.index].ami == null ? var.ami : var.instances[count.index].ami
   instance_type = var.instances[count.index].instance_type == null ? var.instance_type : var.instances[count.index].instance_type
-  
+
   key_name               = var.instances[count.index].key_name == null ? var.key_name : var.instances[count.index].key_name
   user_data              = var.instances[count.index].user_data
 

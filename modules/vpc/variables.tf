@@ -20,6 +20,12 @@ variable "enable_dns_support" {
   default     = true
 }
 
+variable "enable_nat_gateway" {
+  description = "A boolean flag to enable/disable NAT Gateway"
+  type        = bool
+  default     = true
+}
+
 variable "public_subnets" {
   description = "CIDR blocks for public subnets"
   type        = list(string)
