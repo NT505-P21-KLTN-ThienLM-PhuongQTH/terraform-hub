@@ -20,7 +20,7 @@ mkdir -p /home/ubuntu/.docker/cli-plugins
 curl -SL https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-linux-x86_64 \
   -o /home/ubuntu/.docker/cli-plugins/docker-compose
 chmod +x /home/ubuntu/.docker/cli-plugins/docker-compose
-chown -R root:root /home/ubuntu/.docker
+chown -R ubuntu:ubuntu /home/ubuntu/.docker
 
 # Tạo thư mục cấu hình
 mkdir -p /home/ubuntu/mlops/training
