@@ -1,3 +1,3 @@
 #!/bin/bash
-cd /home/ec2-user/mlops/training
+cd /home/ubuntu/mlops/training
 docker compose up -d
