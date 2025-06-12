@@ -20,5 +20,18 @@ cat <<EOF > /home/ubuntu/.ssh/authorized_keys
 ${authorized_keys_content}
 EOF
 
-chown ubuntu:ubuntu /home/ubuntu/.ssh/id_rsa
-chmod 600 /home/ubuntu/.ssh/id_rsa
+# HAProxy setup
+sudo apt install haproxy -y
+sudo systemctl start haproxy
+sudo systemctl enable haproxy
+sudo apt install net-tools -y
+sudo mkdir -p /etc/haproxy/certs
+chmod 600 /etc/haproxy/certs
+
+# Install Certbot
+echo "Installing Certbot..."
+sudo apt install -y certbot python3-certbot-nginx | sudo debconf-set-selections
+
+# Install OpenVPN
+curl -O https://raw.githubusercontent.com/angristan/openvpn-install/master/openvpn-install.sh
+chmod +x openvpn-install.sh

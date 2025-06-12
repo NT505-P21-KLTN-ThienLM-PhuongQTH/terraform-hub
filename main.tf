@@ -44,6 +44,12 @@ module "instances" {
       instance_type = var.database_server_instance_type
       ebs_size = var.database_server_ebs_size
       security_groups = [module.database_sg.id]
+      user_data = templatefile("${path.root}/scripts/db-setup/user_data_db.tpl", {
+        docker_compose_content  = file("${path.root}/scripts/db-setup/docker-compose.yml")
+        env_content             = file("${path.root}/scripts/db-setup/.env")
+        schema_content          = file("${path.root}/scripts/db-setup/schema.sql")
+        start_sh_content        = file("${path.root}/scripts/db-setup/start.sh")
+      })
     },
     {
       name = "${var.aws_project}-storage-servers"
@@ -73,21 +79,21 @@ module "instances" {
   ]
 }
 
-# module "EKS" {
-#   source = "./modules/eks"
+module "EKS" {
+  source = "./modules/eks"
 
-#   name = var.aws_project
-#   role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
-#   k8s_version = "1.29"
-#   cluster_vpc_cidr = var.aws_vpc_config.cidr_block
-#   cluster_subnet_ids = module.vpc.private_subnets_id
-#   service_ipv4_cidr = var.service_ipv4_cidr
-#   eks_addons = ["vpc-cni", "kube-proxy", "coredns"]
-#   node_group_subnet_ids = module.vpc.private_subnets_id
-#   node_group_min_size = var.node_group_min_size
-#   node_group_max_size = var.node_group_max_size
-#   node_group_desired_size = var.node_group_desired_size
-# }
+  name = var.aws_project
+  role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LabRole"
+  k8s_version = "1.29"
+  cluster_vpc_cidr = var.aws_vpc_config.cidr_block
+  cluster_subnet_ids = module.vpc.private_subnets_id
+  service_ipv4_cidr = var.service_ipv4_cidr
+  eks_addons = ["vpc-cni", "kube-proxy", "coredns"]
+  node_group_subnet_ids = module.vpc.private_subnets_id
+  node_group_min_size = var.node_group_min_size
+  node_group_max_size = var.node_group_max_size
+  node_group_desired_size = var.node_group_desired_size
+}
 
 module "cloudflare_dns" {
   source = "./modules/cloudflare"

@@ -55,6 +55,13 @@ module "gateway_sg" {
             protocol    = "tcp"
             ip          = "0.0.0.0/0"
         },
+                {
+            description = "Allow OpenVPN Access"
+            from_port   = 1194
+            to_port     = 1194
+            protocol    = "udp"
+            ip          = "0.0.0.0/0"
+        },
         {
             description = "Allow all traffic from servers"
             from_port   = -1

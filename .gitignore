@@ -33,3 +33,5 @@ terraform.tfvars.json
 
 authorized_keys.tpl
 .env
+
+*.ovpn
