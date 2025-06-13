@@ -77,4 +77,10 @@ else
     exit 1
 fi
 
+# Stop Nginx if it's running
+if systemctl is-active --quiet nginx; then
+    echo "Stopping Nginx..."
+    sudo systemctl stop nginx
+fi
+
 echo "SSL certificate generation and HAProxy configuration completed"

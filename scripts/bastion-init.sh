@@ -35,3 +35,9 @@ sudo apt install -y certbot python3-certbot-nginx | sudo debconf-set-selections
 # Install OpenVPN
 curl -O https://raw.githubusercontent.com/angristan/openvpn-install/master/openvpn-install.sh
 chmod +x openvpn-install.sh
+
+# Stop Nginx if it's running
+if systemctl is-active --quiet nginx; then
+    echo "Stopping Nginx..."
+    sudo systemctl stop nginx
+fi

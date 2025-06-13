@@ -47,7 +47,7 @@ module "instances" {
       user_data = templatefile("${path.root}/scripts/db-setup/user_data_db.tpl", {
         docker_compose_content  = file("${path.root}/scripts/db-setup/docker-compose.yml")
         env_content             = file("${path.root}/scripts/db-setup/.env")
-        schema_content          = file("${path.root}/scripts/db-setup/schema.sql")
+        # schema_content          = file("${path.root}/scripts/db-setup/schema.sql")
         start_sh_content        = file("${path.root}/scripts/db-setup/start.sh")
       })
     },
