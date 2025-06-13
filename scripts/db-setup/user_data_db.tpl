@@ -10,7 +10,7 @@ sudo systemctl enable docker
 sudo systemctl start docker
 sudo curl -L "https://github.com/docker/compose/releases/download/v2.29.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
-sudo usermod -aG docker $USER
+echo 'sudo usermod -aG docker $USER' >> ~/.bashrc
 
 # Copy configuration files
 cat > /home/ubuntu/docker-compose.yml << 'EOF'

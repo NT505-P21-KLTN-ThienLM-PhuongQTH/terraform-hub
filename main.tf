@@ -58,6 +58,7 @@ module "instances" {
       instance_type = var.storage_server_instance_type
       ebs_size = var.storage_server_ebs_size
       security_groups = [module.storage_sg.id]
+      user_data = templatefile("${path.root}/scripts/storage-setup/user_data_vault.tpl", {})
     },
     {
       name = "${var.aws_project}-mlflow-server"
@@ -141,6 +142,14 @@ module "cloudflare_dns" {
       proxied = false
     }
     "model-api.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "loki.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "prometheus.${var.domain_name}" = {
       ttl     = 1
       proxied = false
     }

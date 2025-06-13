@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cd /home/ubuntu
-docker compose up -d
+sudo docker-compose up -d

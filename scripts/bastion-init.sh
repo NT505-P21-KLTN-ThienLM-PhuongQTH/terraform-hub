@@ -30,7 +30,7 @@ chmod 600 /etc/haproxy/certs
 
 # Install Certbot
 echo "Installing Certbot..."
-sudo apt install -y certbot python3-certbot-nginx | sudo debconf-set-selections
+sudo DEBIAN_FRONTEND=noninteractive apt install -y certbot python3-certbot-nginx
 
 # Install OpenVPN
 curl -O https://raw.githubusercontent.com/angristan/openvpn-install/master/openvpn-install.sh
