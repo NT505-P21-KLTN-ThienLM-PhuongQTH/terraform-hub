@@ -219,6 +219,13 @@ module "mlflow_sg" {
             description       = "Allow MLflow Server Web Access"
         },
         {
+            from_port         = 9000
+            to_port           = 9000
+            protocol          = "tcp"
+            security_group_id = module.gateway_sg.id
+            description       = "Allow SonarQube Access"
+        },
+        {
             description       = "Allow all from gateway"
             from_port         = -1
             to_port           = -1

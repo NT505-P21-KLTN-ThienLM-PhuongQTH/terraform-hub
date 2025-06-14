@@ -89,7 +89,7 @@ module "EKS" {
   cluster_vpc_cidr = var.aws_vpc_config.cidr_block
   cluster_subnet_ids = module.vpc.private_subnets_id
   service_ipv4_cidr = var.service_ipv4_cidr
-  eks_addons = ["vpc-cni", "kube-proxy", "coredns"]
+  eks_addons = ["vpc-cni", "kube-proxy", "coredns", "aws-ebs-csi-driver"]
   node_group_subnet_ids = module.vpc.private_subnets_id
   node_group_min_size = var.node_group_min_size
   node_group_max_size = var.node_group_max_size
@@ -150,6 +150,10 @@ module "cloudflare_dns" {
       proxied = false
     }
     "prometheus.${var.domain_name}" = {
+      ttl     = 1
+      proxied = false
+    }
+    "sonarqube.${var.domain_name}" = {
       ttl     = 1
       proxied = false
     }

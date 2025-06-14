@@ -12,6 +12,8 @@ SUBDOMAINS=(
     "app-api"
     "ghtorrent-api"
     "model-api"
+    "loki"
+    "prometheus"
 )
 
 # Root domain
