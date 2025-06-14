@@ -25,5 +25,7 @@ cat > /home/ubuntu/start.sh << 'SCRIPT'
 ${start_sh_content}
 SCRIPT
 
+sudo curl -L -o /home/ubuntu/schema.sql https://raw.githubusercontent.com/NT505-P21-KLTN-ThienLM-PhuongQTH/terraform-hub/blob/eks/scripts/db-setup/schema.sql
+
 sudo chmod +x /home/ubuntu/start.sh
 sudo bash /home/ubuntu/start.sh

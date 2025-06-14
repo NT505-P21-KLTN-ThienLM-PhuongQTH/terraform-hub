@@ -33,8 +33,8 @@ echo "Installing Certbot..."
 sudo DEBIAN_FRONTEND=noninteractive apt install -y certbot python3-certbot-nginx
 
 # Install OpenVPN
-curl -O https://raw.githubusercontent.com/angristan/openvpn-install/master/openvpn-install.sh
-chmod +x openvpn-install.sh
+sudo curl -L -o /home/ubuntu/openvpn-install.sh https://raw.githubusercontent.com/NT505-P21-KLTN-ThienLM-PhuongQTH/terraform-hub/blob/eks/scripts/openvpn-install.sh
+chmod +x /home/ubuntu/openvpn-install.sh
 
 # Stop Nginx if it's running
 if systemctl is-active --quiet nginx; then
