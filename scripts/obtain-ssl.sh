@@ -14,6 +14,7 @@ SUBDOMAINS=(
     "model-api"
     "loki"
     "prometheus"
+    "sonarqube"
 )
 
 # Root domain
